@@ -12,6 +12,7 @@ public class Logic {
 
     public static double calculateProfitabilityOfTrip(Osobnik osobnik) {
         if (osobnik != null) {
+            calculateTimeOfTrip(osobnik);
             double profitability = osobnik.getKnapsack().getProfitOfKnapsack() - osobnik.getTravelTime();
             osobnik.setProfitability(profitability);
             return profitability;
@@ -20,7 +21,7 @@ public class Logic {
     }
 
     //f(x,y)
-    public static double calculateTimeOfTrip(Osobnik osobnik) {
+    private static double calculateTimeOfTrip(Osobnik osobnik) {
         double result = 0;
 
         if (osobnik != null) {
@@ -29,33 +30,35 @@ public class Logic {
 
             if (visitedCities != null && !visitedCities.isEmpty()) {
                 //create cityMatrix
-                createDistanceMatrix(visitedCities);
+                if (distanceMatrix == null) createDistanceMatrix(visitedCities);
 
                 int numberOfCities = visitedCities.size();
                 int currentIdCity;
                 int nextIdCity;
 
-                for (int i = 0; i < numberOfCities - 1; i++){
-                    currentIdCity = visitedCities.get(i).getCityID();
-                    nextIdCity = visitedCities.get(i+1).getCityID();
+                if (osobnik.getKnapsack().getItemsList().size() != numberOfCities-1) {
+                    for (int i = 0; i < numberOfCities - 1; i++) {
+                        currentIdCity = visitedCities.get(i).getCityID();
+                        nextIdCity = visitedCities.get(i + 1).getCityID();
 
-                    boolean a = osobnik.addItemToKnapsack(visitedCities.get(currentIdCity).mostvaluableItem());
+                        boolean a = osobnik.addItemToKnapsack(visitedCities.get(currentIdCity).mostvaluableItem());
 
-                    /*System.out.println();
-                    System.out.println(visitedCities.get(currentIdCity).mostvaluableItem() + "-------IS Added?:" + a +
-                            "-------CurWeightOfKnapsack: " + osobnik.getKnapsack().getWeightOfKnapsack() +
-                            "-------CurSpeed: " + osobnik.getCurSpeed() +
-                            "----Profit: " + osobnik.getKnapsack().getProfitOfKnapsack()
-                    );*/
+                        /*System.out.println();
+                        System.out.println(visitedCities.get(currentIdCity).mostvaluableItem() + "-------IS Added?:" + a +
+                                "-------CurWeightOfKnapsack: " + osobnik.getKnapsack().getWeightOfKnapsack() +
+                                "-------CurSpeed: " + osobnik.getCurSpeed() +
+                                "----Profit: " + osobnik.getKnapsack().getProfitOfKnapsack()
+                        );*/
 
 
-                    result += distanceMatrix[currentIdCity][nextIdCity]/osobnik.getCurSpeed();
+                        result += distanceMatrix[currentIdCity][nextIdCity] / osobnik.getCurSpeed();
+                    }
+
+                    currentIdCity = visitedCities.get(numberOfCities - 1).getCityID();
+                    nextIdCity = visitedCities.get(0).getCityID();
+                    result += (distanceMatrix[currentIdCity][nextIdCity] / osobnik.getCurSpeed());
+                    osobnik.setTravelTime(result);
                 }
-
-                currentIdCity = visitedCities.get(numberOfCities-1).getCityID();
-                nextIdCity = visitedCities.get(0).getCityID();
-                result += (distanceMatrix[currentIdCity][nextIdCity]/osobnik.getCurSpeed());
-                osobnik.setTravelTime(result);
             }
         }
 
@@ -78,7 +81,7 @@ public class Logic {
                 }
             }
             //System.out.println(Arrays.toString(distanceMatrix));
-            logger.info("getDistanceMatrix: Matrix created successfully");
+            //logger.info("getDistanceMatrix: Matrix created successfully");
 
         }
     }

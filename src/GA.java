@@ -1,40 +1,126 @@
+import sun.rmi.runtime.Log;
+
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public class GA {
     private static final double mutationRate = 0.015;
     private static final double tournamentRate = 5;
     private static final double crossover = 0.7;
+    private static final String MAIN_PATH = "C:\\Users\\Dima\\Desktop\\6semestrPWR\\Sztuczna Intelegencja\\geneticAlgorithm\\student\\";
+    private static final String FILE_NAME = "easy_0.ttp";
 
-    private List<Osobnik> Gang;
+    private List<Osobnik> gang;
+    private List<Osobnik> listTheBestOsobnik;
+    private List<Osobnik> lastGang;
     private Osobnik theBestOsobnik;
+    private int sizeOfGang = 0;
 
+    private int numberTheBestOsobnik = 5;
 
+    Reader reader;
 
 
     public GA(int sizeOfGang) {
-        Gang = new ArrayList<Osobnik>(sizeOfGang);
+        gang = new ArrayList<Osobnik>(sizeOfGang);
+        listTheBestOsobnik = new ArrayList<Osobnik>();
+        lastGang = new ArrayList<Osobnik>();
+        reader = new Reader(MAIN_PATH + FILE_NAME);
+        this.sizeOfGang = sizeOfGang;
+
     }
 
     public GA(List<Osobnik> gang) {
-        this.Gang = gang;
+        this.gang = gang;
     }
+
+
+    public List<Osobnik> calculateWholePopulation(){
+        if (gang.size() == 0) createRandomGang();
+
+        for (int i = 0; i < gang.size(); i++) {
+            Logic.calculateProfitabilityOfTrip(gang.get(i));
+        }
+        findTheBestOsobnikFromGang();
+
+        for (int i = 0; i < listTheBestOsobnik.size(); i++) {
+            gang.set(i,listTheBestOsobnik.get(i));
+        }
+
+
+        List<Osobnik> tempListOsobnik = evaluate();
+
+        for (int i = numberTheBestOsobnik; i < gang.size(); i++) {
+            gang.set(i,tempListOsobnik.get(i-numberTheBestOsobnik));
+        }
+
+        for (int i = 0; i < gang.size(); i++) {
+            Logic.calculateProfitabilityOfTrip(gang.get(i));
+        }
+
+        findTheBestOsobnikFromGang();
+        findTheBest();
+
+
+        return gang;
+    }
+
+
+    public List<Osobnik> createRandomGang() {
+        reader.load();
+
+        for (int i = 0; i < sizeOfGang; i++) {
+            Osobnik osobnik = new Osobnik(reader.getCitiesList(), reader.getMaxSpeed(), reader.getMinSpeed(), reader.getCapacityOfKnapsack());
+            osobnik.createRoad();
+            Logic.calculateProfitabilityOfTrip(osobnik);
+            gang.add(osobnik);
+        }
+
+        return gang;
+    }
+
+    public void findTheBestOsobnikFromGang () {
+        if (gang != null && !gang.isEmpty()) {
+            for (Osobnik o: gang) {
+                double tempProfitability = 0;
+                if (listTheBestOsobnik.size() < numberTheBestOsobnik) {
+                    listTheBestOsobnik.add(o);
+                } else {
+                    Osobnik worstOsobnikFromTheBest = getLessProfitable((ArrayList<Osobnik>) listTheBestOsobnik);
+                        if (o.getProfitability() > worstOsobnikFromTheBest.getProfitability() ) {
+                            listTheBestOsobnik.set(listTheBestOsobnik.indexOf(worstOsobnikFromTheBest), o);
+                        }
+                }
+            }
+        }
+    }
+
+    private Osobnik getLessProfitable(ArrayList<Osobnik> temp) {
+        Osobnik tempOs  = temp.get(0);
+        for (Osobnik o: temp) {
+            if (tempOs.getProfitability() > o.getProfitability()) tempOs = o;
+        }
+
+        return tempOs;
+    }
+
 
     public List<Osobnik> evaluate() {
 
         List<Osobnik> tempGang = new ArrayList<>();
 
-        for (int i = 0; i < Gang.size(); i++) {
+        for (int i = 0; i < gang.size(); i++) {
             if (Math.random() < crossover) {
                 //selection
                 Osobnik parent1 = selection();
                 Osobnik parent2 = selection();
                 //crossover
                 Osobnik child = crossover(parent1,parent2);
-                //
                 tempGang.add(child);
             } else {
-                tempGang.add(Gang.get(i));
+                tempGang.add(gang.get(i));
             }
         }
 
@@ -94,15 +180,34 @@ public class GA {
         }
     }
 
+    private void findTheBest() {
+        if (gang != null && !gang.isEmpty()) {
+            Osobnik theBestOsobnik = getTheBestOsobnik();
+            double theBestProfitability = 0;
+
+            if (theBestOsobnik != null) {
+                theBestProfitability = theBestOsobnik.getProfitability();
+            }
+
+                for (Osobnik o : gang) {
+                    if (o.getProfitability() > theBestProfitability) {
+                        theBestProfitability = o.getProfitability();
+                        theBestOsobnik = o;
+                    }
+
+                setTheBestOsobnik(theBestOsobnik);
+            }
+        }
+    }
 
     //The best osobnik in the Gang
     public Osobnik selection() {
         List<Osobnik> tempGang = new ArrayList<>();
         Osobnik temp = null;
-        if (Gang != null && !Gang.isEmpty()) {
+        if (gang != null && !gang.isEmpty()) {
             for (int i = 0; i < tournamentRate; i++) {
-                int randNumb = (int) (Math.random() * Gang.size());
-                temp = Gang.get(randNumb);
+                int randNumb = (int) (Math.random() * gang.size());
+                temp = gang.get(randNumb);
                 tempGang.add(temp);
             }
 
@@ -111,12 +216,12 @@ public class GA {
             }
         }
 
-        setTheBestOsobnik(temp);
+
         return temp;
     }
 
     public int getSizeOfGang() {
-        return Gang.size();
+        return gang.size();
     }
 
 
@@ -126,5 +231,21 @@ public class GA {
 
     public void setTheBestOsobnik(Osobnik theBestOsobnik) {
         this.theBestOsobnik = theBestOsobnik;
+    }
+
+    public void setGang(List<Osobnik> gang) {
+        gang = gang;
+    }
+
+    public List<Osobnik> getGang() {
+        return gang;
+    }
+
+    public List<Osobnik> getListTheBestOsobnik() {
+        return listTheBestOsobnik;
+    }
+
+    public void setListTheBestOsobnik(List<Osobnik> listTheBestOsobnik) {
+        this.listTheBestOsobnik = listTheBestOsobnik;
     }
 }

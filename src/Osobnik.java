@@ -129,7 +129,8 @@ public class Osobnik {
 
     @Override
     public String toString() {
-        return "Osobnik{" +
+        return " = " + profitability;
+        /*return "Osobnik{" +
                 "osobnikID=" + osobnikID +
                 ", visitedCities=" + visitedCities +
                 ", knapsack=" + knapsack +
@@ -139,6 +140,6 @@ public class Osobnik {
                 ", curSpeed=" + curSpeed +
                 ", travelTime=" + travelTime +
                 ", profitability=" + profitability +
-                '}';
+                '}';*/
     }
 }

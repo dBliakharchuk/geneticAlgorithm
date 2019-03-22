@@ -54,7 +54,7 @@ public class Reader {
                // System.out.println(temp);
             }
             sc.close();
-            logger.info("All date were successfully retrieved! And stored on FileList");
+            //logger.info("All date were successfully retrieved! And stored on FileList");
         } catch (Exception e) {
             logger.warning("Some mistake during retrieving data from the file: " + e);
             e.printStackTrace();
@@ -83,7 +83,7 @@ public class Reader {
             tempString = fileList.get(NR_LINE_KNAPSACK_SIZE).trim().split("\\s+");
             capacityOfKnapsack = Integer.parseInt(tempString[3]);
 
-            logger.info("retrieveMainInformation: main information successfully retrieved ");
+            //logger.info("retrieveMainInformation: main information successfully retrieved ");
         } else {
             logger.warning("retrieveMainInformation: empty fileList");
         }
@@ -99,7 +99,7 @@ public class Reader {
                     citiesList.add(tempCity);
                 }
             }
-            logger.info("retrieveCities: Cities were successfully retrieved!");
+            //logger.info("retrieveCities: Cities were successfully retrieved!");
         } else {
             logger.warning("retrieveCities: Cites didnt retrieve!");
         }
@@ -117,7 +117,7 @@ public class Reader {
                     signItemToCity(tempItem);
                 }
             }
-            logger.info("retrieveItems: Items were successfully retrieved!");
+            //logger.info("retrieveItems: Items were successfully retrieved!");
             return itemsList;
         } else {
             return null;
