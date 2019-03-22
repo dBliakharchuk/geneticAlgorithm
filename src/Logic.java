@@ -6,37 +6,30 @@ public class Logic {
 
     private final static Logger logger = Logger.getLogger("Logic.class");
 
-    private double[][] distanceMatrix;
-    private List<City> listOfCities;
-    private double minSpeed;
-    private double maxSpeed;
-    private double curSpeed;
+    private static double[][] distanceMatrix;
 
-    public Logic(List<City> listOfCities, double minSpeed, double maxSpeed) {
-        this.listOfCities = listOfCities;
-        this.minSpeed = minSpeed;
-        this.maxSpeed = maxSpeed;
-        curSpeed = maxSpeed;
+
+
+    public static double calculateProfitabilityOfTrip(Osobnik osobnik) {
+        if (osobnik != null) {
+            double profitability = osobnik.getKnapsack().getProfitOfKnapsack() - osobnik.getTravelTime();
+            osobnik.setProfitability(profitability);
+            return profitability;
+        }
+        return 0;
     }
 
-    public Osobnik createRandomOsobnik() {
-
-        ArrayList<City> suffledCities = (ArrayList<City>) listOfCities;
-        Collections.shuffle(suffledCities);
-
-        Osobnik osobnik = new Osobnik(suffledCities);
-        logger.info("createRandomOsobnik: random Osobnik created");
-
-        return osobnik;
-    }
-
-    public double calculateDistance(Osobnik osobnik) {
+    //f(x,y)
+    public static double calculateTimeOfTrip(Osobnik osobnik) {
         double result = 0;
 
         if (osobnik != null) {
             ArrayList<City> visitedCities = (ArrayList<City>) osobnik.getVisitedCities();
 
+
             if (visitedCities != null && !visitedCities.isEmpty()) {
+                //create cityMatrix
+                createDistanceMatrix(visitedCities);
 
                 int numberOfCities = visitedCities.size();
                 int currentIdCity;
@@ -46,11 +39,23 @@ public class Logic {
                     currentIdCity = visitedCities.get(i).getCityID();
                     nextIdCity = visitedCities.get(i+1).getCityID();
 
-                    result += distanceMatrix[currentIdCity][nextIdCity]/curSpeed;
+                    boolean a = osobnik.addItemToKnapsack(visitedCities.get(currentIdCity).mostvaluableItem());
+
+                    /*System.out.println();
+                    System.out.println(visitedCities.get(currentIdCity).mostvaluableItem() + "-------IS Added?:" + a +
+                            "-------CurWeightOfKnapsack: " + osobnik.getKnapsack().getWeightOfKnapsack() +
+                            "-------CurSpeed: " + osobnik.getCurSpeed() +
+                            "----Profit: " + osobnik.getKnapsack().getProfitOfKnapsack()
+                    );*/
+
+
+                    result += distanceMatrix[currentIdCity][nextIdCity]/osobnik.getCurSpeed();
                 }
+
                 currentIdCity = visitedCities.get(numberOfCities-1).getCityID();
                 nextIdCity = visitedCities.get(0).getCityID();
-                result += distanceMatrix[currentIdCity][nextIdCity]/curSpeed;
+                result += (distanceMatrix[currentIdCity][nextIdCity]/osobnik.getCurSpeed());
+                osobnik.setTravelTime(result);
             }
         }
 
@@ -58,7 +63,7 @@ public class Logic {
     }
 
 
-    private void createDistanceMatrix() {
+    private static void createDistanceMatrix(ArrayList<City> listOfCities) {
         if (listOfCities != null && !listOfCities.isEmpty()) {
             int sizeOfCityList = listOfCities.size();
             distanceMatrix = new double[sizeOfCityList][sizeOfCityList];
@@ -72,16 +77,15 @@ public class Logic {
                     distanceMatrix[i][j] = Math.sqrt(Math.pow(x1-x2,2) + Math.pow(y1-y2,2));
                 }
             }
-            System.out.println(Arrays.toString(distanceMatrix));
+            //System.out.println(Arrays.toString(distanceMatrix));
             logger.info("getDistanceMatrix: Matrix created successfully");
 
         }
     }
 
-
-
     public double[][] getDistanceMatrix() {
-        createDistanceMatrix();
         return distanceMatrix;
     }
+
+
 }

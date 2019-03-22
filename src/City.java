@@ -22,6 +22,25 @@ public class City {
         this.itemsList = new ArrayList<>();
     }
 
+    public Item mostvaluableItem(){
+        Item valuableItem = null;
+        if(!itemsList.isEmpty()){
+            valuableItem = itemsList.get(0);
+            Item tempItem;
+            double currValue = (double) valuableItem.getProfit()/valuableItem.getWeight();
+            for(int i = 1; i < itemsList.size() - 1; i++){
+                tempItem = itemsList.get(i);
+                double value = (double) tempItem.getProfit()/tempItem.getWeight();
+                if(value > currValue){
+                    currValue = value;
+                    valuableItem = tempItem;
+                }
+            }
+        }
+        return valuableItem;
+
+    }
+
     @Override
     public String toString() {
         return "City{" +

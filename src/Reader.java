@@ -7,10 +7,11 @@ import java.util.logging.Logger;
 
 public class Reader {
 
-    public static final  int NR_LINE_CITIES_START = 10;
+    public static final int NR_LINE_CITIES_START = 10;
     public static final int NR_LINE_ITEMS_START = 63;
     public static final int NR_LINE_CITIES = 2;
     public static final int NR_LINE_ITEMS = 3;
+    public static final int NR_LINE_KNAPSACK_SIZE = 4;
     public static final int NR_LINE_MIN_SPEED = 5;
     public static final int NR_LINE_MAX_SPEED = 6;
 
@@ -35,6 +36,12 @@ public class Reader {
         this.itemsList = new ArrayList<>();
     }
 
+    public void load() {
+        readFile();
+        retrieveMainInformation();
+        retrieveCities();
+        retrieveItems();
+    }
 
 
     private void readFile() {
@@ -72,14 +79,17 @@ public class Reader {
             tempString = fileList.get(NR_LINE_MAX_SPEED).trim().split("\\s+");
             maxSpeed = Double.parseDouble(tempString[2]);
 
+            //retrieving capacity of knapsack
+            tempString = fileList.get(NR_LINE_KNAPSACK_SIZE).trim().split("\\s+");
+            capacityOfKnapsack = Integer.parseInt(tempString[3]);
+
             logger.info("retrieveMainInformation: main information successfully retrieved ");
         } else {
             logger.warning("retrieveMainInformation: empty fileList");
         }
     }
 
-    private List<City> retrieveCities() {
-        retrieveMainInformation();
+    private void retrieveCities() {
         if (!fileList.isEmpty() && numberOfCities > 0) {
             City tempCity = null;
             for (int i = NR_LINE_CITIES_START; i <= numberOfCities + NR_LINE_CITIES_START; i++) {
@@ -90,12 +100,8 @@ public class Reader {
                 }
             }
             logger.info("retrieveCities: Cities were successfully retrieved!");
-            retrieveItems();
-            signItemstoCities();
-
-            return citiesList;
         } else {
-            return null;
+            logger.warning("retrieveCities: Cites didnt retrieve!");
         }
     }
 
@@ -106,29 +112,23 @@ public class Reader {
                 String[] strItem = fileList.get(i).trim().split("\\s+");
                 if (strItem.length == 4) {
                     tempItem = new Item(Integer.parseInt(strItem[1]), Integer.parseInt(strItem[2]), Integer.parseInt(strItem[3]));
-                    itemsList.add(tempItem);
+
+                    //Sign item to city
+                    signItemToCity(tempItem);
                 }
             }
+            logger.info("retrieveItems: Items were successfully retrieved!");
             return itemsList;
         } else {
             return null;
         }
     }
 
-    private void signItemstoCities() {
-        if (itemsList != null && !itemsList.isEmpty()) {
-            if (citiesList != null && !citiesList.isEmpty()) {
-                for (City city: citiesList) {
-                    for (int i = 0; i < itemsList.size(); i++) {
-                        Item item = itemsList.get(i);
-                        if (item.getNode() == city.getCityID()) {
-                            city.getItemsList().add(item);
-                        }
-                    }
-                }
-            }
-        }
+    private void signItemToCity(Item item) {
+        citiesList.get(item.getNode()-1).getItemsList().add(item);
+        itemsList.add(item);
     }
+
 
     public ArrayList<String> getFile() {
         return fileList;
@@ -162,11 +162,11 @@ public class Reader {
         return rentingRation;
     }
 
-    public ArrayList<String> getFileList() {
+    /*public ArrayList<String> getFileList() {
         readFile();
         retrieveCities();
         return fileList;
-    }
+    }*/
 
     public ArrayList<City> getCitiesList() {
         return citiesList;
