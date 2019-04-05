@@ -1,135 +1,162 @@
-import sun.rmi.runtime.Log;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class GA {
-    private static final double mutationRate = 0.015;
-    private static final double tournamentRate = 5;
-    private static final double crossover = 0.7;
+    private double mutationRate = 0.015;
+    private double tournamentRate = 10;
+    private double crossoverRate = 0.7;
     private static final String MAIN_PATH = "C:\\Users\\Dima\\Desktop\\6semestrPWR\\Sztuczna Intelegencja\\geneticAlgorithm\\student\\";
-    private static final String FILE_NAME = "easy_0.ttp";
+    private static final String FILE_NAME = "hard_4.ttp";
+    private int numberOfBestThieves = 10;
+    private boolean isTournamentSelection = true;
+
 
     private List<Osobnik> gang;
-    private List<Osobnik> listTheBestOsobnik;
-    private List<Osobnik> lastGang;
-    private Osobnik theBestOsobnik;
-    private int sizeOfGang = 0;
+    private List<Osobnik> listOfBestThieves;
+    private Osobnik theBestThief;
+    private int sizeOfGang;
 
-    private int numberTheBestOsobnik = 5;
-
-    Reader reader;
+    private Reader reader;
 
 
-    public GA(int sizeOfGang) {
-        gang = new ArrayList<Osobnik>(sizeOfGang);
-        listTheBestOsobnik = new ArrayList<Osobnik>();
-        lastGang = new ArrayList<Osobnik>();
-        reader = new Reader(MAIN_PATH + FILE_NAME);
+     GA (int sizeOfGang, String file_path, double crossoverRate, double mutationRate, double tournamentRate, int numberOfBestThieves, boolean isTournamentSelection) {
+         this.numberOfBestThieves = numberOfBestThieves;
+         this.crossoverRate = crossoverRate;
+         this.mutationRate = mutationRate;
+         this.tournamentRate = tournamentRate;
+         this.sizeOfGang = sizeOfGang;
+         this.isTournamentSelection= isTournamentSelection;
+
+         gang = new ArrayList<Osobnik>(sizeOfGang + numberOfBestThieves);
+         listOfBestThieves = new ArrayList<>(numberOfBestThieves);
+         reader = new Reader(file_path);
+         theBestThief = null;
+     }
+     GA (int sizeOfGang) {
         this.sizeOfGang = sizeOfGang;
+        gang = new ArrayList<Osobnik>(sizeOfGang + numberOfBestThieves);
+        listOfBestThieves = new ArrayList<>(numberOfBestThieves);
+        reader = new Reader(MAIN_PATH + FILE_NAME);
+        theBestThief = null;
 
     }
 
-    public GA(List<Osobnik> gang) {
-        this.gang = gang;
-    }
 
 
-    public List<Osobnik> calculateWholePopulation(){
-        if (gang.size() == 0) createRandomGang();
-
-        for (int i = 0; i < gang.size(); i++) {
-            Logic.calculateProfitabilityOfTrip(gang.get(i));
-        }
-        findTheBestOsobnikFromGang();
-
-        for (int i = 0; i < listTheBestOsobnik.size(); i++) {
-            gang.set(i,listTheBestOsobnik.get(i));
-        }
-
-
-        List<Osobnik> tempListOsobnik = evaluate();
-
-        for (int i = numberTheBestOsobnik; i < gang.size(); i++) {
-            gang.set(i,tempListOsobnik.get(i-numberTheBestOsobnik));
-        }
+    List<Osobnik> calculateWholePopulation(){
+        if (gang.isEmpty()) createRandomGang();
 
         for (int i = 0; i < gang.size(); i++) {
             Logic.calculateProfitabilityOfTrip(gang.get(i));
         }
 
-        findTheBestOsobnikFromGang();
-        findTheBest();
+        //Collections.sort(listOfBestThieves);
+        findAndSetTheBestThievesFromGang();
 
+        List<Osobnik> tempListOfThieves = evaluate();
+
+        for (int i = 0; i < gang.size(); i++) {
+            gang.set(i,tempListOfThieves.get(i));
+        }
+
+        for (int i = 0; i < numberOfBestThieves; i++) {
+            gang.set(i,listOfBestThieves.get(i));
+        }
+
+
+        Collections.sort(listOfBestThieves);
+        findAndSetTheBestThievesFromGang();
+        findAndChangeBestThief();
 
         return gang;
     }
 
 
-    public List<Osobnik> createRandomGang() {
+     private void createRandomGang() {
         reader.load();
 
-        for (int i = 0; i < sizeOfGang; i++) {
-            Osobnik osobnik = new Osobnik(reader.getCitiesList(), reader.getMaxSpeed(), reader.getMinSpeed(), reader.getCapacityOfKnapsack());
-            osobnik.createRoad();
-            Logic.calculateProfitabilityOfTrip(osobnik);
-            gang.add(osobnik);
+        for (int i = 0; i < sizeOfGang + numberOfBestThieves; i++) {
+            Osobnik thief = new Osobnik(reader.getCitiesList(), reader.getMaxSpeed(), reader.getMinSpeed(), reader.getCapacityOfKnapsack());
+            thief.createRoad();
+            gang.add(thief);
         }
-
-        return gang;
     }
 
-    public void findTheBestOsobnikFromGang () {
+    private void findAndSetTheBestThievesFromGang() {
         if (gang != null && !gang.isEmpty()) {
-            for (Osobnik o: gang) {
-                double tempProfitability = 0;
-                if (listTheBestOsobnik.size() < numberTheBestOsobnik) {
-                    listTheBestOsobnik.add(o);
-                } else {
-                    Osobnik worstOsobnikFromTheBest = getLessProfitable((ArrayList<Osobnik>) listTheBestOsobnik);
-                        if (o.getProfitability() > worstOsobnikFromTheBest.getProfitability() ) {
-                            listTheBestOsobnik.set(listTheBestOsobnik.indexOf(worstOsobnikFromTheBest), o);
-                        }
-                }
+            if (listOfBestThieves.isEmpty()) {
+                fillOutListOfTheBestThievesAtStart();
             }
+
+            for (int i = numberOfBestThieves; i < gang.size(); i++) {
+                Osobnik currThief = gang.get(i);
+                Collections.sort(listOfBestThieves);
+                Osobnik worstThiefFromTheBest = listOfBestThieves.get(0);
+                    if (currThief.getProfitability() > worstThiefFromTheBest.getProfitability() && !listOfBestThieves.contains(currThief) ) {
+                        //worstThiefFromTheBest.createRoad();
+                        gang.set(i, worstThiefFromTheBest);
+                        listOfBestThieves.set(listOfBestThieves.indexOf(worstThiefFromTheBest), currThief);
+
+                    }
+            }
+        } else {
+            System.out.println("findAndSetTheBestThievesFromGang: GANG IS NULL");
+        }
+    }
+    private void fillOutListOfTheBestThievesAtStart() {
+        for (int i = numberOfBestThieves; i < 2 * numberOfBestThieves; i++) {
+            Logic.calculateProfitabilityOfTrip(gang.get(i));
+            listOfBestThieves.add(gang.get(i));
         }
     }
 
-    private Osobnik getLessProfitable(ArrayList<Osobnik> temp) {
-        Osobnik tempOs  = temp.get(0);
-        for (Osobnik o: temp) {
-            if (tempOs.getProfitability() > o.getProfitability()) tempOs = o;
+    /*private Osobnik getWorstThiefFromTheBest() {
+        Osobnik worstThiefFromBest  = null;
+        if (listOfBestThieves != null && !listOfBestThieves.isEmpty()) {
+            worstThiefFromBest  = gang.get(numberOfBestThieves);
+            for (Osobnik currThief: listOfBestThieves) {
+                if (worstThiefFromBest.getProfitability() > currThief.getProfitability()) worstThiefFromBest = currThief;
+            }
+        } else {
+            System.out.println("getWorstThiefFromTheBest: LIST OF THE BEST THIFS iS EMPTY or null!!!!!");
         }
-
-        return tempOs;
-    }
+        return worstThiefFromBest;
+    }*/
 
 
     public List<Osobnik> evaluate() {
 
-        List<Osobnik> tempGang = new ArrayList<>();
+        List<Osobnik> newEvaluatedGang = new ArrayList<>();
 
-        for (int i = 0; i < gang.size(); i++) {
-            if (Math.random() < crossover) {
-                //selection
-                Osobnik parent1 = selection();
-                Osobnik parent2 = selection();
-                //crossover
-                Osobnik child = crossover(parent1,parent2);
-                tempGang.add(child);
+        for (Osobnik thief : gang) {
+            if (Math.random() < crossoverRate) {
+                Osobnik parent1 = null;
+                Osobnik parent2 = null;
+                if (isTournamentSelection) {
+                    //tourSelection
+                    parent1 = tourSelection();
+                    parent2 = tourSelection();
+                } else {
+                    //roulleteSelection
+                    parent1 = roulleteSelection();
+                    parent2 = roulleteSelection();
+                }
+
+                //crossoverRate
+                Osobnik child = crossover(parent1, parent2);
+                Logic.calculateProfitabilityOfTrip(child);
+                newEvaluatedGang.add(child);
             } else {
-                tempGang.add(gang.get(i));
+                thief.createRoad();
+                newEvaluatedGang.add(thief);
             }
         }
 
         //mutation
-        for (Osobnik o: tempGang){
+        for (Osobnik o: newEvaluatedGang){
             mutate(o);
         }
 
-        return tempGang;
+        return newEvaluatedGang;
     }
 
 
@@ -141,7 +168,7 @@ public class GA {
             if (parent1.getVisitedCities() != null && parent2.getVisitedCities() != null) {
                  child = new Osobnik(parent1.getVisitedCities().size(), parent1.getMaxSpeed(), parent1.getMinSpeed(), parent1.getMaxWeightOfKnapsack());
 
-                 int pivot = (int) (Math.random()*parent1.getVisitedCities().size());
+                 int pivot = (int) (Math.random()*(parent1.getVisitedCities().size()));
 
                  for (int i = 0; i < pivot; i++) {
                      child.addCity(parent1.getVisitedCities().get(i));
@@ -154,98 +181,143 @@ public class GA {
                  }
             }
         }
+        Logic.calculateProfitabilityOfTrip(child);
         return child;
     }
 
 
-
     //Mutation
-    private void mutate(Osobnik osobnik) {
-        if (osobnik != null) {
-            if (osobnik.getVisitedCities() != null && !osobnik.getVisitedCities().isEmpty()) {
+    private void mutate(Osobnik thief) {
+        
+        if (thief != null) {
+            if (thief.getVisitedCities() != null && !thief.getVisitedCities().isEmpty()) {
                 if (Math.random() < mutationRate) {
-                    for (int pos1 = 0; pos1 < osobnik.getVisitedCities().size(); pos1++){
-                        int pos2 = (int) (Math.random() * osobnik.getVisitedCities().size());
+                    for (int pos1 = 0; pos1 < thief.getVisitedCities().size(); pos1++){
+                        int pos2 = (int) (Math.random() * thief.getVisitedCities().size());
                         if (pos1 != pos2) {
-                            City city1 = osobnik.getVisitedCities().get(pos1);
-                            City city2 = osobnik.getVisitedCities().get(pos2);
+                            City city1 = thief.getVisitedCities().get(pos1);
+                            City city2 = thief.getVisitedCities().get(pos2);
 
-                            osobnik.getVisitedCities().set(pos1, city2);
-                            osobnik.getVisitedCities().set(pos2, city1);
+                            thief.getVisitedCities().set(pos1, city2);
+                            thief.getVisitedCities().set(pos2, city1);
 
                         }
                     }
                 }
-            }
-        }
+            } else { System.out.println("MUTATE: OSOBNIK DOESN'T HAVE CITIES" ); }
+        } else { System.out.println("MUTATE: OSOBNIK IS NULL"); }
     }
 
-    private void findTheBest() {
+    private void findAndChangeBestThief() {
         if (gang != null && !gang.isEmpty()) {
-            Osobnik theBestOsobnik = getTheBestOsobnik();
+            Osobnik theBestThief = getBestThief();
             double theBestProfitability = 0;
 
-            if (theBestOsobnik != null) {
-                theBestProfitability = theBestOsobnik.getProfitability();
+            if (theBestThief == null) {
+                theBestThief = listOfBestThieves.get(numberOfBestThieves-1);
             }
 
-                for (Osobnik o : gang) {
-                    if (o.getProfitability() > theBestProfitability) {
-                        theBestProfitability = o.getProfitability();
-                        theBestOsobnik = o;
-                    }
+            theBestProfitability = theBestThief.getProfitability();
 
-                setTheBestOsobnik(theBestOsobnik);
+            for (Osobnik o : listOfBestThieves) {
+                if (o.getProfitability() > theBestProfitability) {
+                    theBestProfitability = o.getProfitability();
+                    theBestThief = o;
+                }
             }
+            
+            setTheBestThief(theBestThief);
+        } else {
+            System.out.println("findAndChangeBestThief: GANG IS NULL");
         }
     }
 
-    //The best osobnik in the Gang
-    public Osobnik selection() {
-        List<Osobnik> tempGang = new ArrayList<>();
-        Osobnik temp = null;
+    //The best thief in the tournament
+    public Osobnik tourSelection() {
+        List<Osobnik> listOfRandomThiefs = new ArrayList<>();
+        Osobnik bestRandomThief = null;
         if (gang != null && !gang.isEmpty()) {
             for (int i = 0; i < tournamentRate; i++) {
                 int randNumb = (int) (Math.random() * gang.size());
-                temp = gang.get(randNumb);
-                tempGang.add(temp);
+                bestRandomThief = gang.get(randNumb);
+                listOfRandomThiefs.add(bestRandomThief);
             }
 
-            for (Osobnik o: tempGang) {
-                if (o.getProfitability() > temp.getProfitability()) temp = o;
+            for (Osobnik o: listOfRandomThiefs) {
+                if (o.getProfitability() > bestRandomThief.getProfitability()) bestRandomThief = o;
             }
+        } else {
+            System.out.println("SELECTION: GANG IS EMPTY");
         }
+        return bestRandomThief;
+    }
+
+     Osobnik roulleteSelection(){
+        double totalFitness = 0;
+        for(int i = 0; i < gang.size(); i++){
+            totalFitness += gang.get(i).getProfitability();
+        }
+        double value = (Math.random()*totalFitness);
+        for(int i = 0; i < gang.size(); i++){
+            value -= gang.get(i).getProfitability();
+            if(value < 0)
+                return gang.get(i);
+        }
+        return gang.get(gang.size() - 1);
 
 
-        return temp;
     }
 
     public int getSizeOfGang() {
         return gang.size();
     }
 
+    public double getAvgFitnessFromGang() {
+        double sum = 0;
 
-    public Osobnik getTheBestOsobnik() {
-        return theBestOsobnik;
+        if (gang != null) {
+             for (Osobnik o: gang) {
+                 sum += o.getProfitability();
+             }
+            return sum/gang.size();
+        }
+         return -1.0;
     }
 
-    public void setTheBestOsobnik(Osobnik theBestOsobnik) {
-        this.theBestOsobnik = theBestOsobnik;
+    public double getMinFitnessFromGang() {
+         double min = Double.MAX_VALUE;
+         if (gang != null) {
+             for (Osobnik o: gang) {
+                 if (o.getProfitability() < min) min = o.getProfitability();
+             }
+         }
+        return min;
+    }
+
+
+
+
+    public Osobnik getBestThief() {
+        return theBestThief;
+    }
+
+    public void setTheBestThief(Osobnik theBestThief) {
+        this.theBestThief = theBestThief;
     }
 
     public void setGang(List<Osobnik> gang) {
-        gang = gang;
+        this.gang = gang;
     }
 
     public List<Osobnik> getGang() {
         return gang;
     }
 
-    public List<Osobnik> getListTheBestOsobnik() {
-        return listTheBestOsobnik;
+    public List<Osobnik> getListOfBestThieves() {
+        return listOfBestThieves;
     }
 
-    public void setListTheBestOsobnik(List<Osobnik> listTheBestOsobnik) {
-        this.listTheBestOsobnik = listTheBestOsobnik;
+    public void setListOfBestThieves(List<Osobnik> listOfBestThieves) {
+        this.listOfBestThieves = listOfBestThieves;
     }
 }

@@ -15,9 +15,13 @@ public class Knapsack {
     }
 
     public boolean addToKnapsack(Item item) {
-        profitOfKnapsack += item.getProfit();
-        setWeightOfKnapsack(weightOfKnapsack + item.getWeight());
-        return itemsList.add(item);
+        if (isFit(item)) {
+            profitOfKnapsack += item.getProfit();
+            setWeightOfKnapsack(weightOfKnapsack + item.getWeight());
+            itemsList.add(item);
+            return true;
+        }
+        return false;
     }
 
     public int countProfitOfKnapsack() {
@@ -32,7 +36,7 @@ public class Knapsack {
         return profitOfKnapsack;
     }
 
-    private void countWeightOfKnapsack() {
+    private void calculateWeightOfKnapsack() {
         if (itemsList != null && !itemsList.isEmpty()) {
             int sum = 0;
             for (Item i: itemsList) {
@@ -42,14 +46,15 @@ public class Knapsack {
         }
     }
 
+    public void refreshKnapsack() {
+        this.itemsList = new ArrayList<>();
+        weightOfKnapsack = 0;
+        profitOfKnapsack = 0;
+    }
+
     public boolean isFit(Item item) {
         if (item != null) {
-            if (weightOfKnapsack + item.getWeight() <= maxWeightOfKnapsack)
-            {
-                weightOfKnapsack += item.getWeight();
-                return true;
-            }
-
+            return weightOfKnapsack + item.getWeight() <= maxWeightOfKnapsack;
         }
         return false;
     }

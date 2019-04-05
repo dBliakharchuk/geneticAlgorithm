@@ -2,10 +2,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class Osobnik {
+public class Osobnik implements Comparable<Osobnik> {
 
-    private int osobnikID;
-    private List<City> visitedCities;
+    private ArrayList<City> visitedCities;
     private Knapsack knapsack;
 
     private int maxWeightOfKnapsack;
@@ -16,7 +15,7 @@ public class Osobnik {
     private double profitability;
 
 
-    public Osobnik(List<City> visitedCities, double maxSpeed, double minSpeed, int maxWeightOfKnapsack) {
+    public Osobnik(ArrayList<City> visitedCities, double maxSpeed, double minSpeed, int maxWeightOfKnapsack) {
         this.visitedCities = visitedCities;
         this.maxSpeed = maxSpeed;
         this.minSpeed = minSpeed;
@@ -24,6 +23,7 @@ public class Osobnik {
         this.maxWeightOfKnapsack = maxWeightOfKnapsack;
         knapsack = new Knapsack(maxWeightOfKnapsack);
     }
+
 
     public Osobnik(int numberOfCities, double maxSpeed, double minSpeed, int maxWeightOfKnapsack) {
         this.visitedCities = new ArrayList<>(numberOfCities);
@@ -34,20 +34,13 @@ public class Osobnik {
         knapsack = new Knapsack(maxWeightOfKnapsack);
     }
 
-    public Osobnik(List<City> visitedCities, double maxSpeed, double minSpeed, Knapsack knapsack) {
-        this.visitedCities = visitedCities;
-        this.knapsack = knapsack;
-        this.maxSpeed = maxSpeed;
-        this.minSpeed = minSpeed;
-    }
-
 
 
     public void createRoad() {
         ArrayList<City> suffledCities = (ArrayList<City>) visitedCities;
         ArrayList<City> tempList = new ArrayList<>(visitedCities.size());
 
-        tempList.addAll(visitedCities);
+        tempList.addAll(suffledCities);
 
         Collections.shuffle(tempList);
         setVisitedCities(tempList);
@@ -58,14 +51,13 @@ public class Osobnik {
         return visitedCities.add(city);
     }
 
-    public boolean addItemToKnapsack(Item item) {
+    boolean addItemToKnapsack(Item item) {
         boolean isAdded = false;
+
         if (item != null) {
-            boolean isFit = knapsack.isFit(item);
-            if (isFit) {
-                isAdded = true;
+            isAdded = knapsack.addToKnapsack(item);
+            if (isAdded) {
                 calculateCurSpeed();
-                knapsack.addToKnapsack(item);
             }
         }
         return isAdded;
@@ -79,12 +71,8 @@ public class Osobnik {
         curSpeed = maxSpeed - knapsack.getWeightOfKnapsack()*((maxSpeed - minSpeed)/knapsack.getMaxWeightOfKnapsack());
     }
 
-    public List<City> getVisitedCities() {
+    public ArrayList<City> getVisitedCities() {
         return visitedCities;
-    }
-
-    public int getOsobnikID() {
-        return osobnikID;
     }
 
     public Knapsack getKnapsack() {
@@ -123,7 +111,7 @@ public class Osobnik {
         this.profitability = profitability;
     }
 
-    public void setVisitedCities(List<City> visitedCities) {
+    public void setVisitedCities(ArrayList<City> visitedCities) {
         this.visitedCities = visitedCities;
     }
 
@@ -141,5 +129,13 @@ public class Osobnik {
                 ", travelTime=" + travelTime +
                 ", profitability=" + profitability +
                 '}';*/
+    }
+
+
+    @Override
+    public int compareTo(Osobnik o) {
+        if(this.profitability > o.profitability) return 1;
+        else if(this.profitability < o.profitability) return -1;
+        else return 0;
     }
 }

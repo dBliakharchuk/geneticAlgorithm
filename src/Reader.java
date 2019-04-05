@@ -8,7 +8,7 @@ import java.util.logging.Logger;
 public class Reader {
 
     public static final int NR_LINE_CITIES_START = 10;
-    public static final int NR_LINE_ITEMS_START = 63;
+    public static final int NR_LINE_ITEMS_START = 450;
     public static final int NR_LINE_CITIES = 2;
     public static final int NR_LINE_ITEMS = 3;
     public static final int NR_LINE_KNAPSACK_SIZE = 4;
@@ -21,7 +21,6 @@ public class Reader {
     private int capacityOfKnapsack;
     private double maxSpeed;
     private double minSpeed;
-    private int rentingRation;
 
     private ArrayList<String> fileList;
     private ArrayList<City> citiesList;
@@ -51,7 +50,6 @@ public class Reader {
             while (sc.hasNextLine()) {
                 String temp = sc.nextLine();
                 fileList.add(temp);
-               // System.out.println(temp);
             }
             sc.close();
             //logger.info("All date were successfully retrieved! And stored on FileList");
@@ -99,7 +97,6 @@ public class Reader {
                     citiesList.add(tempCity);
                 }
             }
-            //logger.info("retrieveCities: Cities were successfully retrieved!");
         } else {
             logger.warning("retrieveCities: Cites didnt retrieve!");
         }
@@ -117,7 +114,6 @@ public class Reader {
                     signItemToCity(tempItem);
                 }
             }
-            //logger.info("retrieveItems: Items were successfully retrieved!");
             return itemsList;
         } else {
             return null;
@@ -134,18 +130,6 @@ public class Reader {
         return fileList;
     }
 
-    public String getFile_path() {
-        return file_path;
-    }
-
-    public int getNumberOfCities() {
-        return numberOfCities;
-    }
-
-    public int getNumberOfItems() {
-        return numberOfItems;
-    }
-
     public int getCapacityOfKnapsack() {
         return capacityOfKnapsack;
     }
@@ -157,16 +141,6 @@ public class Reader {
     public double getMinSpeed() {
         return minSpeed;
     }
-
-    public int getRentingRation() {
-        return rentingRation;
-    }
-
-    /*public ArrayList<String> getFileList() {
-        readFile();
-        retrieveCities();
-        return fileList;
-    }*/
 
     public ArrayList<City> getCitiesList() {
         return citiesList;
